@@ -155,9 +155,28 @@ do
         return success, errorMessage
     end
 
-    for AssetName, _ in CustomImageManagerAssets do
+        for AssetName, _ in CustomImageManagerAssets do
         CustomImageManager.DownloadAsset(AssetName)
     end
+end
+local function GetExternalIcon(URL)
+    if typeof(URL) ~= "string" then return nil end
+    if URL:match("^rbxassetid://") or URL:match("^rbxasset://") or URL:match("^rbxthumb://") then
+        return URL
+    end
+    if URL:match("^https?://") then
+        local FileName = URL:match("([^/]+)%?") or URL:match("([^/]+)$")
+        FileName = FileName:gsub("[^%w%.%-_]", "_")
+        if not CustomImageManagerAssets[FileName] then
+            CustomImageManager.AddAsset(FileName, 0, URL)
+        else
+            CustomImageManager.DownloadAsset(FileName, true)
+        end
+
+        return CustomImageManager.GetAsset(FileName)
+    end
+
+    return nil
 end
 
 local Library = {
@@ -13788,7 +13807,21 @@ function Library:CreateWindow(WindowInfo)
                     Parent = GroupboxTop,
                 })
 
-                local BoxIcon = Library:GetCustomIcon(Info.IconName)
+                                --// 外部URL対応：GetExternalIcon を先に試す
+                local BoxIcon = nil
+                if typeof(Info.IconName) == "string" and Info.IconName:match("^https?://") then
+                    local CustomUrl = GetExternalIcon(Info.IconName)
+                    if CustomUrl then
+                        BoxIcon = {
+                            Url = CustomUrl,
+                            ImageRectOffset = Vector2.zero,
+                            ImageRectSize = Vector2.zero,
+                        }
+                    end
+                else
+                    BoxIcon = Library:GetCustomIcon(Info.IconName)
+                end
+
                 if BoxIcon then
                     local GroupboxHeaderIcon = New("ImageLabel", {
                         AnchorPoint = Vector2.new(0, 0.5),
