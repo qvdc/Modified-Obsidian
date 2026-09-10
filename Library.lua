@@ -6774,92 +6774,132 @@ do
         return Button
     end
 
-    function Funcs:AddIcontukiParagraph(config)
-        if self.Destroyed then return nil end
-        config = config or {}
-        local userId = config.Icon or 0
-        local messageText = config.content or ''
-        local height = config.Height or 80
-        local displayName = 'Unknown'
-			local username = 'Unknown'
-		pcall(function()
-			local UserService = game:GetService("UserService")
-			local result = UserService:GetUserInfosByUserIdsAsync({userId})
-			if result and result[1] then
-				displayName = result[1].DisplayName or 'Unknown'
-				username = result[1].Username or 'Unknown'
-			end
-		end)
-        local combinedName = displayName .. ' (@' .. username .. ')'
-        local avatarUrl = 'https://www.roblox.com/headshot-thumbnail/image?userId=' .. tostring(userId) .. '&width=420&height=420&format=png'
-        local Groupbox = self
-        local Container = Groupbox.Container
-        local ParagraphFrame = New("Frame", {
-            Size = UDim2.new(1, 0, 0, height),
-            BackgroundColor3 = "BackgroundColor",
-            BackgroundTransparency = 0.7,
-            Parent = Container,
-        })
-        New("UICorner", {
-            CornerRadius = UDim.new(0, 5),
-            Parent = ParagraphFrame,
-        })
-        Library:AddOutline(ParagraphFrame)
-        local Avatar = New("ImageLabel", {
-            Name = "Avatar",
-            Size = UDim2.new(0, 60, 0, 60),
-            Position = UDim2.new(0, 10, 0, 10),
-            BackgroundTransparency = 1,
-            Image = avatarUrl,
-            Parent = ParagraphFrame,
-        })
-        local NameLabel = New("TextLabel", {
-            Name = "CombinedName",
-            Size = UDim2.new(1, -90, 0, 20),
-            Position = UDim2.new(0, 80, 0, 12),
-            BackgroundTransparency = 1,
-            Text = combinedName,
-            TextSize = 14,
-            FontFace = Font.fromEnum(Enum.Font.GothamBold),
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextColor3 = "FontColor",
-            Parent = ParagraphFrame,
-        })
-        local CommentLabel = New("TextLabel", {
-            Name = "Comment",
-            Size = UDim2.new(1, -90, 0, 35),
-            Position = UDim2.new(0, 80, 0, 32),
-            BackgroundTransparency = 1,
-            Text = messageText,
-            TextSize = 12,
-            FontFace = Font.fromEnum(Enum.Font.GothamSemibold),
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top,
-            TextWrapped = true,
-            TextColor3 = "FontColor",
-            TextTransparency = 0.5,
-            Parent = ParagraphFrame,
-        })
-        Library:AddToRegistry(NameLabel, { TextColor3 = "FontColor" })
-        Library:AddToRegistry(CommentLabel, { TextColor3 = "FontColor" })
-        Library:AddToRegistry(ParagraphFrame, { BackgroundColor3 = "BackgroundColor" })
-        Groupbox:Resize()
-        local elementInfo = {
-            Type = "Custom",
-            Holder = ParagraphFrame,
-            Visible = true,
-            Destroy = function()
-                ParagraphFrame:Destroy()
-            end,
-            SetVisible = function(visible)
-                ParagraphFrame.Visible = visible
-                Groupbox:Resize()
-            end
-        }
-        table.insert(Groupbox.Elements, elementInfo)
+function Funcs:AddIcontukiParagraph(config)
+    if self.Destroyed then return nil end
+    config = config or {}
+    local userId = config.Icon or 0
+    local messageText = config.content or ''
+    local displayName = 'Unknown'
+    local username = 'Unknown'
 
-        return elementInfo
-    end
+    pcall(function()
+        local UserService = game:GetService("UserService")
+        local result = UserService:GetUserInfosByUserIdsAsync({userId})
+        if result and result[1] then
+            displayName = result[1].DisplayName or 'Unknown'
+            username = result[1].Username or 'Unknown'
+        end
+    end)
+
+    local combinedName = displayName .. ' (@' .. username .. ')'
+    local avatarUrl = 'https://www.roblox.com/headshot-thumbnail/image?userId=' .. tostring(userId) .. '&width=420&height=420&format=png'
+
+    local Groupbox = self
+    local Container = Groupbox.Container
+
+    --// 親は AutomaticSize.Y で高さ自動調整
+    local ParagraphFrame = New("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundColor3 = "BackgroundColor",
+        BackgroundTransparency = 0.7,
+        Parent = Container,
+    })
+    New("UICorner", {
+        CornerRadius = UDim.new(0, 5),
+        Parent = ParagraphFrame,
+    })
+    Library:AddOutline(ParagraphFrame)
+
+    --// パディングで内側の余白を管理
+    New("UIPadding", {
+        PaddingBottom = UDim.new(0, 10),
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 10),
+        Parent = ParagraphFrame,
+    })
+
+    --// アバター
+    local Avatar = New("ImageLabel", {
+        Name = "Avatar",
+        Size = UDim2.fromOffset(60, 60),
+        Position = UDim2.fromOffset(0, 0),
+        BackgroundTransparency = 1,
+        Image = avatarUrl,
+        Parent = ParagraphFrame,
+    })
+
+    --// テキストコンテナ（アバターの右側）
+    local TextContainer = New("Frame", {
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(70, 0),
+        Size = UDim2.new(1, -70, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Parent = ParagraphFrame,
+    })
+    New("UIListLayout", {
+        Padding = UDim.new(0, 4),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = TextContainer,
+    })
+
+    --// 名前ラベル（長い場合は折り返す）
+    local NameLabel = New("TextLabel", {
+        Name = "CombinedName",
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        Text = combinedName,
+        TextSize = 14,
+        FontFace = Font.fromEnum(Enum.Font.GothamBold),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = "FontColor",
+        TextWrapped = true,          -- ← 折り返しON
+        LayoutOrder = 1,
+        Parent = TextContainer,
+    })
+
+    --// コメントラベル（折り返し）
+    local CommentLabel = New("TextLabel", {
+        Name = "Comment",
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundTransparency = 1,
+        Text = messageText,
+        TextSize = 12,
+        FontFace = Font.fromEnum(Enum.Font.GothamSemibold),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        TextColor3 = "FontColor",
+        TextTransparency = 0.5,
+        LayoutOrder = 2,
+        Parent = TextContainer,
+    })
+
+    Library:AddToRegistry(NameLabel, { TextColor3 = "FontColor" })
+    Library:AddToRegistry(CommentLabel, { TextColor3 = "FontColor" })
+    Library:AddToRegistry(ParagraphFrame, { BackgroundColor3 = "BackgroundColor" })
+
+    Groupbox:Resize()
+
+    local elementInfo = {
+        Type = "Custom",
+        Holder = ParagraphFrame,
+        Visible = true,
+        Destroy = function()
+            ParagraphFrame:Destroy()
+        end,
+        SetVisible = function(visible)
+            ParagraphFrame.Visible = visible
+            Groupbox:Resize()
+        end
+    }
+    table.insert(Groupbox.Elements, elementInfo)
+
+    return elementInfo
+end
 
     function Funcs:AddCheckbox(Idx, Info)
         if self.Destroyed then return nil end
@@ -12389,8 +12429,28 @@ function Library:CreateWindow(WindowInfo)
             Parent = TitleHolder,
         })
 
+        --// IconSize を数値でも UDim2 でも受け付けるように正規化
+        if typeof(WindowInfo.IconSize) == "number" then
+            WindowInfo.IconSize = UDim2.fromOffset(WindowInfo.IconSize, WindowInfo.IconSize)
+        end
+
         if WindowInfo.Icon then
-            local Icon = Library:GetCustomIcon(WindowInfo.Icon)
+            --// 外部URL対応：GetExternalIcon を先に試す
+            local Icon = nil
+            if typeof(WindowInfo.Icon) == "string" and WindowInfo.Icon:match("^https?://") then
+                local CustomUrl = GetExternalIcon(WindowInfo.Icon)
+                if CustomUrl then
+                    Icon = {
+                        Url = CustomUrl,
+                        ImageRectOffset = Vector2.zero,
+                        ImageRectSize = Vector2.zero,
+                        Custom = true,
+                    }
+                end
+            else
+                Icon = Library:GetCustomIcon(WindowInfo.Icon)
+            end
+
             WindowIcon = New("ImageLabel", {
                 Size = WindowInfo.IconSize,
                 Parent = TitleHolder,
@@ -12692,6 +12752,17 @@ function Library:CreateWindow(WindowInfo)
 
         WindowTitle.Text = title
         WindowInfo.Title = title
+    end
+
+    function Window:SetIconSize(Size)
+        if typeof(Size) == "number" then
+            Size = UDim2.fromOffset(Size, Size)
+        end
+        assert(typeof(Size) == "UDim2", "IconSize must be a number or UDim2.")
+        WindowInfo.IconSize = Size
+        if WindowIcon then
+            WindowIcon.Size = Size
+        end
     end
 
     function Window:SetBackgroundImage(Image: string)
@@ -16324,6 +16395,5 @@ function Library:Unload()
 
     getgenv().Library = nil
 end
-
 getgenv().Library = Library
 return Library
