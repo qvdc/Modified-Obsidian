@@ -431,6 +431,7 @@ local Templates = {
 
         --// Snapping \\--
         MinSidebarWidth = 128,
+        SidebarWidth = nil,
         SidebarCompactWidth = 48,
         SidebarCollapseThreshold = 0.5,
 
@@ -12308,7 +12309,10 @@ function Library:CreateWindow(WindowInfo)
         AvoidCoreGui = WindowInfo.SnapAvoidCoreGui,
     }
 
-    local InitialLeftWidth = math.ceil(WindowInfo.Size.X.Offset * 0.3)
+    local InitialLeftWidth = WindowInfo.SidebarWidth
+        and math.ceil(WindowInfo.SidebarWidth)
+        or math.ceil(WindowInfo.Size.X.Offset * 0.3)
+    InitialLeftWidth = math.clamp(InitialLeftWidth, WindowInfo.MinSidebarWidth, WindowInfo.Size.X.Offset - WindowInfo.MinContainerWidth - 1)
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
 
@@ -13002,7 +13006,7 @@ function Library:CreateWindow(WindowInfo)
     end
 
     function Window:SetSidebarWidth(Width)
-        Width = math.clamp(Width, 48, MainFrame.Size.X.Offset - WindowInfo.MinContainerWidth - 1)
+        Width = math.clamp(Width, WindowInfo.SidebarCompactWidth, MainFrame.Size.X.Offset - WindowInfo.MinContainerWidth - 1)
 
         DividerLine.Position = UDim2.fromOffset(Width, 0)
 
