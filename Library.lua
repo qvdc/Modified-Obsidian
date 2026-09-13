@@ -12288,19 +12288,19 @@ function Library:CreateWindow(WindowInfo)
 
     --// Premium Whitelist
     Library.Whitelist = (typeof(WindowInfo.Whitelist) == "table") and WindowInfo.Whitelist or {}
-    local PREMIUMuser = false
+    local IsPremiumUser = false
     do
         local UserId = Library.LocalPlayer and Library.LocalPlayer.UserId
         if UserId then
             for _, Id in ipairs(Library.Whitelist) do
                 if tonumber(Id) == UserId then
-                    PREMIUMuser = true
+                    IsPremiumUser = true
                     break
                 end
             end
         end
     end
-    Library.PREMIUMuser = PREMIUMuser
+    Library.IsPremiumUser = IsPremiumUser
 
     Library.Animations = WindowInfo.Animations
     Library.TabTransitionInfo = TweenInfo.new(
