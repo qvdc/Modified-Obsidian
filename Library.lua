@@ -516,6 +516,8 @@ local Templates = {
         Risky = false,
         Disabled = false,
         Visible = true,
+
+        Premium = false,
     },
     Input = {
         Text = "Input",
@@ -6798,7 +6800,6 @@ function Funcs:AddIcontukiParagraph(config)
     local Groupbox = self
     local Container = Groupbox.Container
 
-    --// 親は AutomaticSize.Y で高さ自動調整
     local ParagraphFrame = New("Frame", {
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -6812,7 +6813,6 @@ function Funcs:AddIcontukiParagraph(config)
     })
     Library:AddOutline(ParagraphFrame)
 
-    --// パディングで内側の余白を管理
     New("UIPadding", {
         PaddingBottom = UDim.new(0, 10),
         PaddingLeft = UDim.new(0, 10),
@@ -6820,8 +6820,6 @@ function Funcs:AddIcontukiParagraph(config)
         PaddingTop = UDim.new(0, 10),
         Parent = ParagraphFrame,
     })
-
-    --// アバター
     local Avatar = New("ImageLabel", {
         Name = "Avatar",
         Size = UDim2.fromOffset(60, 60),
@@ -6830,8 +6828,6 @@ function Funcs:AddIcontukiParagraph(config)
         Image = avatarUrl,
         Parent = ParagraphFrame,
     })
-
-    --// テキストコンテナ（アバターの右側）
     local TextContainer = New("Frame", {
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(70, 0),
@@ -6844,8 +6840,6 @@ function Funcs:AddIcontukiParagraph(config)
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = TextContainer,
     })
-
-    --// 名前ラベル（長い場合は折り返す）
     local NameLabel = New("TextLabel", {
         Name = "CombinedName",
         Size = UDim2.new(1, 0, 0, 0),
@@ -6856,12 +6850,10 @@ function Funcs:AddIcontukiParagraph(config)
         FontFace = Font.fromEnum(Enum.Font.GothamBold),
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = "FontColor",
-        TextWrapped = true,          -- ← 折り返しON
+        TextWrapped = true,
         LayoutOrder = 1,
         Parent = TextContainer,
     })
-
-    --// コメントラベル（折り返し）
     local CommentLabel = New("TextLabel", {
         Name = "Comment",
         Size = UDim2.new(1, 0, 0, 0),
@@ -7168,6 +7160,14 @@ end
         local Groupbox = self
         local Container = Groupbox.Container
 
+        --// Premium Check
+        local IsPremiumLock = false
+        if Info.Premium == true and Library.IsPremiumUser ~= true then
+            IsPremiumLock = true
+            Info.Disabled = true
+            Info.Text = string.format("%s [PREMIUM 👑]", Info.Text)
+        end
+
         local Toggle = {
             Connections = {},
             Destroyed = false,
@@ -7185,6 +7185,9 @@ end
             Risky = Info.Risky,
             Disabled = Info.Disabled,
             Visible = Info.Visible,
+
+            Premium = Info.Premium == true,
+            PremiumLocked = IsPremiumLock,
 
             Addons = {},
             AnyKeyPickerPicking = false,
@@ -7361,6 +7364,17 @@ end
         end
 
         table.insert(Toggle.Connections, Button.MouseButton1Click:Connect(function()
+            if Toggle.PremiumLocked then
+                Library:Notify({
+                    Title = "Premium Required",
+                    Description = "This feature requires Premium. Please purchase Premium to use it.",
+                    Time = 4,
+                    Icon = "crown",
+                    IconColor = Color3.fromRGB(255, 200, 60),
+                })
+                return
+            end
+
             if Toggle.Disabled then
                 return
             end
@@ -11062,7 +11076,6 @@ end
 				local DisplayText = IsTable and (Value.FakeName or Value.Name) or Value
 				local OptionIcon = IsTable and Value.Image or Dropdown.Icon
 
-				-- ⭐ アイコンが数値の場合は rbxassetid:// 形式に変換
 				if OptionIcon and tonumber(OptionIcon) then
 					OptionIcon = "rbxassetid://" .. tostring(OptionIcon)
 				end
@@ -11127,7 +11140,6 @@ end
 					if IconData then
 						Library:ApplyLucideIcon(Row.Image, IconData)
 					else
-						-- ⭐ rbxassetid:// 形式を直接設定
 						Row.Image.Image = Entry.Icon
 					end
 					Row.Image.ImageColor3 = Library.Scheme.FontColor
@@ -12274,6 +12286,22 @@ function Library:CreateWindow(WindowInfo)
     Library.ToggleKeybind = WindowInfo.ToggleKeybind
     Library.GlobalSearch = WindowInfo.GlobalSearch
 
+    --// Premium Whitelist
+    Library.Whitelist = (typeof(WindowInfo.Whitelist) == "table") and WindowInfo.Whitelist or {}
+    local PREMIUMuser = false
+    do
+        local UserId = Library.LocalPlayer and Library.LocalPlayer.UserId
+        if UserId then
+            for _, Id in ipairs(Library.Whitelist) do
+                if tonumber(Id) == UserId then
+                    PREMIUMuser = true
+                    break
+                end
+            end
+        end
+    end
+    Library.PREMIUMuser = PREMIUMuser
+
     Library.Animations = WindowInfo.Animations
     Library.TabTransitionInfo = TweenInfo.new(
         math.max(0, WindowInfo.TabTransitionTime or 0.22),
@@ -12432,14 +12460,11 @@ function Library:CreateWindow(WindowInfo)
             Padding = UDim.new(0, 6),
             Parent = TitleHolder,
         })
-
-        --// IconSize を数値でも UDim2 でも受け付けるように正規化
         if typeof(WindowInfo.IconSize) == "number" then
             WindowInfo.IconSize = UDim2.fromOffset(WindowInfo.IconSize, WindowInfo.IconSize)
         end
 
         if WindowInfo.Icon then
-            --// 外部URL対応：GetExternalIcon を先に試す
             local Icon = nil
             if typeof(WindowInfo.Icon) == "string" and WindowInfo.Icon:match("^https?://") then
                 local CustomUrl = GetExternalIcon(WindowInfo.Icon)
