@@ -12286,21 +12286,35 @@ function Library:CreateWindow(WindowInfo)
     Library.ToggleKeybind = WindowInfo.ToggleKeybind
     Library.GlobalSearch = WindowInfo.GlobalSearch
 
-    --// Premium Whitelist
+    --// Premium Whitelist / Admin
     Library.Whitelist = (typeof(WindowInfo.Whitelist) == "table") and WindowInfo.Whitelist or {}
+    Library.Admin     = (typeof(WindowInfo.Admin) == "table") and WindowInfo.Admin or {}
+
     local IsPremiumUser = false
+    local IsAdmin = false
     do
         local UserId = Library.LocalPlayer and Library.LocalPlayer.UserId
         if UserId then
-            for _, Id in ipairs(Library.Whitelist) do
+            for _, Id in ipairs(Library.Admin) do
                 if tonumber(Id) == UserId then
-                    IsPremiumUser = true
+                    IsAdmin = true
                     break
+                end
+            end
+
+            if not IsAdmin then
+                for _, Id in ipairs(Library.Whitelist) do
+                    if tonumber(Id) == UserId then
+                        IsPremiumUser = true
+                        break
+                    end
                 end
             end
         end
     end
-    Library.IsPremiumUser = IsPremiumUser
+
+    Library.IsAdmin = IsAdmin
+    Library.IsPremiumUser = IsPremiumUser or IsAdmin
 
     Library.Animations = WindowInfo.Animations
     Library.TabTransitionInfo = TweenInfo.new(
