@@ -412,6 +412,7 @@ local Templates = {
         GlobalSearch = false,
 
         CornerRadius = 4,
+        SearchCornerRadius = 4,
         NotifySide = "Right",
         ShowCustomCursor = true,
 
@@ -12287,6 +12288,11 @@ function Library:CreateWindow(WindowInfo)
     end
     WindowInfo.CornerRadius = math.min(WindowInfo.CornerRadius, 20)
 
+    if typeof(WindowInfo.SearchCornerRadius) ~= "number" then
+        WindowInfo.SearchCornerRadius = WindowInfo.CornerRadius
+    end
+    WindowInfo.SearchCornerRadius = math.min(WindowInfo.SearchCornerRadius, 20)
+
     local TabButtonsStyle = WindowInfo.TabButtonsStyle
 
     --// Old Naming \\--
@@ -12622,6 +12628,7 @@ function Library:CreateWindow(WindowInfo)
             Size = WindowInfo.SearchbarSize,
             TextScaled = true,
             Visible = not (WindowInfo.DisableSearch or false),
+            LayoutOrder = 2,
             Parent = RightWrapper,
         })
         New("UIFlexItem", {
@@ -12631,7 +12638,7 @@ function Library:CreateWindow(WindowInfo)
         table.insert(
             Library.Corners,
             New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+                CornerRadius = UDim.new(0, WindowInfo.SearchCornerRadius),
                 Parent = SearchBox,
             })
         )
