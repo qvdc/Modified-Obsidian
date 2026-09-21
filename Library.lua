@@ -6404,6 +6404,7 @@ do
                 Info.Disabled = Params.Disabled or false
                 Info.Visible = if typeof(Params.Visible) == "boolean" then Params.Visible else true
                 Info.Idx = typeof(Second) == "table" and First or nil
+                Info.Premium = Params.Premium == true
             else
                 Info.Text = First or ""
                 Info.Func = Second or function() end
@@ -6416,11 +6417,20 @@ do
                 Info.Disabled = false
                 Info.Visible = true
                 Info.Idx = select(3, ...) or nil
+                Info.Premium = false
             end
 
             return Info
         end
         local Info = GetInfo(...)
+
+        --// Premium Check（追加）
+        local IsPremiumLock = false
+        if Info.Premium == true and Library.IsPremiumUser ~= true then
+            IsPremiumLock = true
+            Info.Disabled = true
+            Info.Text = string.format("%s [PREMIUM 👑]", Info.Text)
+        end
 
         local Groupbox = self
         local Container = Groupbox.Container
@@ -6440,6 +6450,9 @@ do
             Risky = Info.Risky,
             Disabled = Info.Disabled,
             Visible = Info.Visible,
+
+            Premium = Info.Premium == true,   --// 追加
+            PremiumLocked = IsPremiumLock,    --// 追加
 
             Tween = nil,
             Type = "Button",
@@ -6512,6 +6525,17 @@ do
             end))
 
             table.insert(Button.Connections, Button.Base.MouseButton1Click:Connect(function()
+                if Button.PremiumLocked then
+                    Library:Notify({
+                        Title = "Premium Required",
+                        Description = "This feature requires Premium. Please purchase Premium to use it.",
+                        Time = 4,
+                        Icon = "crown",
+                        IconColor = Color3.fromRGB(255, 200, 60),
+                    })
+                    return
+                end
+
                 if Button.Disabled or Button.Locked then
                     return
                 end
