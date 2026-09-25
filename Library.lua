@@ -10635,6 +10635,46 @@ end
 			return Dropdown.Values[Val] ~= nil
 		end
 
+		function Dropdown:SetValues(Values)
+			if typeof(Values) ~= "table" then
+				return
+			end
+
+			Dropdown.Values = Values
+
+			if Info.Multi then
+				for Val in Dropdown.Value do
+					local Found = false
+					for _, P in Values do
+						if P == Val then
+							Found = true
+							break
+						end
+					end
+					if not Found then
+						Dropdown.Value[Val] = nil
+					end
+				end
+			elseif Dropdown.Value ~= nil then
+				local Found = false
+				for _, P in Values do
+					if P == Dropdown.Value then
+						Found = true
+						break
+					end
+				end
+				if not Found then
+					Dropdown.Value = nil
+				end
+			end
+
+			Dropdown:BuildDropdownList()
+			Dropdown:Display()
+			if not Dropdown.Disabled then
+				Library:UpdateDependencyBoxes()
+			end
+		end
+
 		function Dropdown:SetValue(Value)
 			if Info.Multi then
 				if typeof(Value) == "Instance" then
