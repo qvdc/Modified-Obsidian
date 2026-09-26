@@ -6927,6 +6927,13 @@ end
         local Groupbox = self
         local Container = Groupbox.Container
 
+        local IsPremiumLock = false
+        if Info.Premium == true and Library.IsPremiumUser ~= true then
+            IsPremiumLock = true
+            Info.Disabled = true
+            Info.Text = string.format("%s [PREMIUM 👑]", Info.Text)
+        end
+
         local Toggle = {
             Connections = {},
             Destroyed = false,
@@ -6944,6 +6951,9 @@ end
             Risky = Info.Risky,
             Disabled = Info.Disabled,
             Visible = Info.Visible,
+
+            Premium = Info.Premium == true,
+            PremiumLocked = IsPremiumLock,
 
             Addons = {},
             AnyKeyPickerPicking = false,
@@ -7104,6 +7114,17 @@ end
         end
 
         table.insert(Toggle.Connections, Button.MouseButton1Click:Connect(function()
+            if Toggle.PremiumLocked then
+                Library:Notify({
+                    Title = "Premium Required",
+                    Description = "This feature requires Premium. Please purchase Premium to use it.",
+                    Time = 4,
+                    Icon = "crown",
+                    IconColor = Color3.fromRGB(255, 200, 60),
+                })
+                return
+            end
+
             if Toggle.Disabled then
                 return
             end
@@ -12130,13 +12151,29 @@ function Library:Notify(...)
         local ExtraWidth = BigIconLabel and 32 or 0
         local IconWidth = IconLabel and 21 or 0
         local CloseWidth = Data.Closable and 20 or 0
+
+        local AreaWidth = NotificationArea.AbsoluteSize.X / Library.DPIScale
+        if AreaWidth <= 0 then
+            AreaWidth = 300
+        end
+
         local MaxTextWidth = math.max(
-            40,
-            (NotificationArea.AbsoluteSize.X / Library.DPIScale) - 24 - ExtraWidth - CloseWidth
+            120,
+            AreaWidth - 24 - ExtraWidth - CloseWidth
         )
 
         if Title then
-            local X, Y = Library:GetTextBounds(Title.Text, Title.FontFace, Title.TextSize, MaxTextWidth - IconWidth)
+            local TitleMaxWidth = math.max(80, MaxTextWidth - IconWidth)
+
+            local X, Y = Library:GetTextBounds(Title.Text, Title.FontFace, Title.TextSize, TitleMaxWidth)
+
+            if X > TitleMaxWidth then
+                Title.TextWrapped = true
+                X = TitleMaxWidth
+            else
+                Title.TextWrapped = false
+            end
+
             Title.Size = UDim2.fromOffset(X, Y)
             TitleX = X + IconWidth
             TitleContainer.Size = UDim2.fromOffset(TitleX, math.max(Y, IconLabel and 16 or 0))
